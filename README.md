@@ -1,8 +1,18 @@
 # Claude Proxy
 
-[![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)](https://github.com/yourusername/claude-proxy)
-[![Platform](https://img.shields.io/badge/platform-macOS-lightgrey.svg)](https://github.com/yourusername/claude-proxy/releases)
+[![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)](https://github.com/Fangfang-Lee/claude-proxy/releases/latest)
+[![Platform](https://img.shields.io/badge/platform-macOS-lightgrey.svg)](https://github.com/Fangfang-Lee/claude-proxy/releases)
 [![Built with Electron](https://img.shields.io/badge/built%20with-Electron-orange.svg)](https://www.electronjs.org/)
+[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+
+## 下载安装
+
+### 最新版本
+
+**macOS (Apple Silicon)**: [Claude Proxy-1.0.0-arm64.dmg](https://github.com/Fangfang-Lee/claude-proxy/releases/latest)
+
+> 首次打开时，如提示"无法打开"，请在系统设置中允许"任何来源"应用：
+> **系统设置 → 隐私与安全性 → 安全性 → 仍要打开**
 
 Claude API 代理桌面应用，帮助你管理和切换不同的 Claude API 中转服务。
 
@@ -183,6 +193,19 @@ npm run typecheck
 # 构建
 npm run build
 ```
+
+---
+
+## 更新日志
+
+### v1.0.0 (2026-03-01)
+
+- 首次发布
+- 多路由规则管理
+- 智能模型映射
+- 请求日志与 Token 统计
+- Claude Code 一键配置
+- 系统托盘支持
 
 ---
 
