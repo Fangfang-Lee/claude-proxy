@@ -11,8 +11,14 @@
 
 **macOS (Apple Silicon)**: [Claude Proxy-1.0.0-arm64.dmg](https://github.com/Fangfang-Lee/claude-proxy/releases/latest)
 
-> 首次打开时，如提示"无法打开"，请在系统设置中允许"任何来源"应用：
-> **系统设置 → 隐私与安全性 → 安全性 → 仍要打开**
+> 由于应用未经过 Apple 签名，首次打开时可能出现"无法打开"的提示，有两种解决方法：
+>
+> **方法一（推荐）**：在 Finder 中右键点击应用 → 选择"打开" → 点击"打开"
+>
+> **方法二**：在终端运行以下命令后即可正常打开：
+> ```bash
+> sudo xattr -cr "/Applications/Claude Proxy.app"
+> ```
 
 Claude API 代理桌面应用，帮助你管理和切换不同的 Claude API 中转服务。
 
