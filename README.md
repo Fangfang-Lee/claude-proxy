@@ -1,6 +1,6 @@
 # Claude Proxy
 
-[![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)](https://github.com/Fangfang-Lee/claude-proxy/releases/latest)
+[![Version](https://img.shields.io/badge/version-1.0.1-blue.svg)](https://github.com/Fangfang-Lee/claude-proxy/releases/latest)
 [![Platform](https://img.shields.io/badge/platform-macOS-lightgrey.svg)](https://github.com/Fangfang-Lee/claude-proxy/releases)
 [![Built with Electron](https://img.shields.io/badge/built%20with-Electron-orange.svg)](https://www.electronjs.org/)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
@@ -9,7 +9,7 @@
 
 ### 最新版本
 
-**macOS (Apple Silicon)**: [Claude Proxy-1.0.0-arm64.dmg](https://github.com/Fangfang-Lee/claude-proxy/releases/latest)
+**macOS (Apple Silicon)**: [Claude Proxy-1.0.1-arm64.dmg](https://github.com/Fangfang-Lee/claude-proxy/releases/latest)
 
 > 由于应用未经过 Apple 签名，首次打开时可能出现"无法打开"的提示，有两种解决方法：
 >
@@ -209,6 +209,14 @@ npm run build
 ---
 
 ## 更新日志
+
+### v1.0.1 (2026-03-02)
+
+- 新增：Claude Code 配置手动编辑功能，支持在应用内直接编辑配置文件
+- 新增：设置页面支持表单/JSON 双视图模式，满足不同用户需求
+- 优化：设置页面采用两栏布局，视觉更舒适
+- 简化：移除冗余按钮，将保存功能整合为"保存并写入配置"一键操作
+- 文档：新增常见问题 FAQ，解答国产模型配置相关问题
 
 ### v1.0.0 (2026-03-01)
 
