@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react'
 import { AppSettings } from '../../types/index'
 
+const TEXTAREA_CLS = 'w-full h-64 px-3 py-2 bg-gray-50 border border-gray-200 rounded text-sm font-mono focus:outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-100 text-gray-800 resize-none'
+
 interface Props {
   onRestart: () => Promise<void>
 }
@@ -25,6 +27,9 @@ export default function SettingsPage({ onRestart }: Props) {
   const [saving, setSaving] = useState(false)
   const [restarting, setRestarting] = useState(false)
   const [savedMsg, setSavedMsg] = useState('')
+  const [claudeConfig, setClaudeConfig] = useState('')
+  const [configLoading, setConfigLoading] = useState(false)
+  const [configMsg, setConfigMsg] = useState('')
 
   useEffect(() => {
     window.api.settings.get().then((s) => {
@@ -36,6 +41,36 @@ export default function SettingsPage({ onRestart }: Props) {
       setAliases(a)
     })
   }, [])
+
+  const loadClaudeConfig = async () => {
+    setConfigLoading(true)
+    const result = await window.api.claude.readConfig()
+    if (result.success && result.content) {
+      setClaudeConfig(result.content)
+      setConfigMsg('已加载')
+    } else {
+      setConfigMsg(result.error ?? '加载失败')
+    }
+    setTimeout(() => setConfigMsg(''), 2000)
+    setConfigLoading(false)
+  }
+
+  const saveClaudeConfig = async () => {
+    if (!claudeConfig.trim()) {
+      setConfigMsg('配置不能为空')
+      setTimeout(() => setConfigMsg(''), 2000)
+      return
+    }
+    setConfigLoading(true)
+    const result = await window.api.claude.saveConfig(claudeConfig)
+    if (result.success) {
+      setConfigMsg('已保存')
+    } else {
+      setConfigMsg(result.error ?? '保存失败')
+    }
+    setTimeout(() => setConfigMsg(''), 2000)
+    setConfigLoading(false)
+  }
 
   const handleSave = async () => {
     setSaving(true)
@@ -99,6 +134,45 @@ export default function SettingsPage({ onRestart }: Props) {
               />
             </div>
           ))}
+        </section>
+
+        <section className="bg-white rounded-lg border border-gray-200 p-4 space-y-3">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-xs font-medium text-gray-500 uppercase tracking-wide">Claude Code 配置</h3>
+              <p className="text-xs text-gray-400 mt-1">手动编辑 Claude Code 配置文件</p>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={loadClaudeConfig}
+                disabled={configLoading}
+                className="px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded text-xs transition-colors disabled:opacity-50"
+              >
+                {configLoading && !claudeConfig ? '加载中…' : '加载配置'}
+              </button>
+              <button
+                onClick={saveClaudeConfig}
+                disabled={configLoading || !claudeConfig}
+                className="px-3 py-1.5 bg-blue-500 hover:bg-blue-600 text-white rounded text-xs transition-colors disabled:opacity-50"
+              >
+                {configLoading && claudeConfig ? '保存中…' : '保存配置'}
+              </button>
+              {configMsg && <span className={`text-xs ${configMsg.includes('失败') || configMsg.includes('不能为空') ? 'text-red-500' : 'text-green-600'}`}>{configMsg}</span>}
+            </div>
+          </div>
+          {claudeConfig ? (
+            <textarea
+              value={claudeConfig}
+              onChange={(e) => setClaudeConfig(e.target.value)}
+              className={TEXTAREA_CLS}
+              placeholder='点击"加载配置"读取当前配置文件'
+            />
+          ) : (
+            <div className={`${TEXTAREA_CLS} flex items-center justify-center text-gray-400`}>
+              点击"加载配置"读取当前配置文件
+            </div>
+          )}
+          <p className="text-xs text-gray-400">保存后将直接写入 ~/.claude/settings.json，请确保 JSON 格式正确</p>
         </section>
 
         <div className="flex items-center gap-3">

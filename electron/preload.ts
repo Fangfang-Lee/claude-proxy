@@ -20,6 +20,8 @@ contextBridge.exposeInMainWorld('api', {
   },
   claude: {
     applyConfig: (): Promise<{ success: boolean; error?: string }> => ipcRenderer.invoke('claude:apply-config'),
+    readConfig: (): Promise<{ success: boolean; content?: string; error?: string }> => ipcRenderer.invoke('claude:read-config'),
+    saveConfig: (content: string): Promise<{ success: boolean; error?: string }> => ipcRenderer.invoke('claude:save-config', content),
   },
   onLog: (cb: (entry: unknown) => void) => {
     ipcRenderer.on('log:entry', (_event, entry) => cb(entry))

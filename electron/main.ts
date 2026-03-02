@@ -181,6 +181,33 @@ function registerIpcHandlers(): void {
     }
   })
 
+  // Read Claude Code config
+  ipcMain.handle('claude:read-config', () => {
+    const configPath = path.join(os.homedir(), '.claude', 'settings.json')
+    try {
+      if (fs.existsSync(configPath)) {
+        const content = fs.readFileSync(configPath, 'utf-8')
+        return { success: true, content }
+      }
+      return { success: true, content: '{}' }
+    } catch (err: unknown) {
+      return { success: false, error: (err as Error).message }
+    }
+  })
+
+  // Save Claude Code config (manual edit)
+  ipcMain.handle('claude:save-config', (_event, content: string) => {
+    const configPath = path.join(os.homedir(), '.claude', 'settings.json')
+    try {
+      // Validate JSON before saving
+      JSON.parse(content)
+      fs.writeFileSync(configPath, content, 'utf-8')
+      return { success: true }
+    } catch (err: unknown) {
+      return { success: false, error: (err as Error).message }
+    }
+  })
+
   // Write Claude Code config
   ipcMain.handle('claude:apply-config', () => {
     const settings = loadSettings()

@@ -28,6 +28,8 @@ declare global {
       }
       claude: {
         applyConfig: () => Promise<{ success: boolean; error?: string }>
+        readConfig: () => Promise<{ success: boolean; content?: string; error?: string }>
+        saveConfig: (content: string) => Promise<{ success: boolean; error?: string }>
       }
       onLog: (cb: (entry: unknown) => void) => () => void
     }
