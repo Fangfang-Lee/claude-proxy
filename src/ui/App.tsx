@@ -98,21 +98,6 @@ export default function App() {
           </span>
         </div>
         <div className="flex items-center gap-3">
-          {applyMsg && (
-            <span className={`${applyOk ? 'text-green-600' : 'text-red-500'}`}>{applyMsg}</span>
-          )}
-          <button
-            onClick={applyConfig}
-            className="px-2.5 py-1 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded transition-colors"
-          >
-            写入 Claude Code 配置
-          </button>
-          <button
-            onClick={copyConfig}
-            className="px-2.5 py-1 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded transition-colors"
-          >
-            复制配置
-          </button>
         </div>
       </div>
 

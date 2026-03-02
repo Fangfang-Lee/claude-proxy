@@ -52,7 +52,6 @@ export default function SettingsPage({ onRestart }: Props) {
   const [timeout, setTimeout_] = useState('')
   const [aliases, setAliases] = useState<Record<AliasKey, string>>({} as Record<AliasKey, string>)
   const [saving, setSaving] = useState(false)
-  const [restarting, setRestarting] = useState(false)
   const [savedMsg, setSavedMsg] = useState('')
 
   // Claude Code 配置相关状态
@@ -301,14 +300,6 @@ export default function SettingsPage({ onRestart }: Props) {
                   </div>
                 ))}
               </div>
-              <div className="mt-6 pt-4 border-t border-gray-100">
-                <button
-                  onClick={switchToJson}
-                  className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-sm font-medium transition-colors"
-                >
-                  切换到 JSON 视图编辑完整配置
-                </button>
-              </div>
             </>
           )}
 
@@ -355,18 +346,47 @@ export default function SettingsPage({ onRestart }: Props) {
         {/* 保存按钮 */}
         <div className="flex items-center gap-4 pt-2">
           <button
-            onClick={handleSave}
+            onClick={async () => {
+              setSaving(true)
+              // 1. 保存代理配置
+              const modelAliases: AppSettings['modelAliases'] = {}
+              for (const k of MODEL_ALIAS_KEYS) {
+                if (aliases[k].trim()) modelAliases[k] = aliases[k].trim()
+              }
+              const updated = await window.api.settings.update({
+                port: Number(port),
+                requestTimeoutMs: Number(timeout) * 1000,
+                modelAliases,
+              })
+              setSettings(updated)
+
+              // 2. 写入 Claude Code 配置
+              if (viewMode === 'json' && claudeConfigJson.trim()) {
+                // JSON 视图：直接保存 JSON
+                await window.api.claude.saveConfig(claudeConfigJson)
+              } else {
+                // 表单视图：构建完整配置并保存
+                const config = {
+                  ...claudeConfig,
+                  env: {
+                    ...(claudeConfig.env ?? {}),
+                    ...currentEnv,
+                  },
+                }
+                await window.api.claude.saveConfig(JSON.stringify(config, null, 2))
+              }
+
+              // 3. 重启代理
+              await onRestart()
+
+              setSaving(false)
+              setSavedMsg('已保存并写入配置')
+              setTimeout(() => setSavedMsg(''), 2000)
+            }}
             disabled={saving}
-            className="px-6 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
-          >
-            {saving ? '保存中…' : '保存'}
-          </button>
-          <button
-            onClick={handleRestart}
-            disabled={restarting}
             className="px-6 py-2.5 bg-blue-500 hover:bg-blue-600 text-white rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
           >
-            {restarting ? '重启中…' : '保存并重启代理'}
+            {saving ? '保存中…' : '保存并写入配置'}
           </button>
           {savedMsg && <span className="text-sm text-green-600">{savedMsg}</span>}
         </div>
