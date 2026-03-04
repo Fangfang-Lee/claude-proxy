@@ -1,6 +1,6 @@
 # Claude Proxy
 
-[![Version](https://img.shields.io/badge/version-1.0.1-blue.svg)](https://github.com/Fangfang-Lee/claude-proxy/releases/latest)
+[![Version](https://img.shields.io/badge/version-1.0.2-blue.svg)](https://github.com/Fangfang-Lee/claude-proxy/releases/latest)
 [![Platform](https://img.shields.io/badge/platform-macOS-lightgrey.svg)](https://github.com/Fangfang-Lee/claude-proxy/releases)
 [![Built with Electron](https://img.shields.io/badge/built%20with-Electron-orange.svg)](https://www.electronjs.org/)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
@@ -9,7 +9,7 @@
 
 ### 最新版本
 
-**macOS (Apple Silicon)**: [Claude Proxy-1.0.1-arm64.dmg](https://github.com/Fangfang-Lee/claude-proxy/releases/latest)
+**macOS (Apple Silicon)**: [Claude Proxy-1.0.2-arm64.dmg](https://github.com/Fangfang-Lee/claude-proxy/releases/latest)
 
 > 由于应用未经过 Apple 签名，首次打开时可能出现"无法打开"的提示，有两种解决方法：
 >
@@ -209,6 +209,13 @@ npm run build
 ---
 
 ## 更新日志
+
+### v1.0.2 (2026-03-05)
+
+- 新增：CLAUDE.md 项目指南文档
+- 新增：PRD.md 产品需求文档
+- 新增：CHANGELOG.md 修改日志文档
+- 优化：文档结构和组织
 
 ### v1.0.1 (2026-03-02)
 
