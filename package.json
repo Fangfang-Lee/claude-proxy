@@ -1,6 +1,6 @@
 {
   "name": "claude-proxy",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Claude API proxy desktop app",
   "main": "dist-electron/main.js",
   "scripts": {
