@@ -20,13 +20,6 @@ export interface RouteRule {
 export interface AppSettings {
   port: number
   requestTimeoutMs: number
-  modelAliases: {
-    ANTHROPIC_MODEL?: string
-    ANTHROPIC_DEFAULT_SONNET_MODEL?: string
-    ANTHROPIC_DEFAULT_HAIKU_MODEL?: string
-    ANTHROPIC_DEFAULT_OPUS_MODEL?: string
-    ANTHROPIC_REASONING_MODEL?: string
-  }
 }
 
 export interface LogEntry {
@@ -66,5 +59,4 @@ export interface TestResult {
 export const DEFAULT_SETTINGS: AppSettings = {
   port: 3000,
   requestTimeoutMs: 30000,
-  modelAliases: {},
 }

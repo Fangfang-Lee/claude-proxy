@@ -220,10 +220,6 @@ function registerIpcHandlers(): void {
       const env = (existing.env as Record<string, string>) ?? {}
       env['ANTHROPIC_BASE_URL'] = `http://localhost:${settings.port}`
       env['ANTHROPIC_AUTH_TOKEN'] = 'claude-proxy'
-      const aliases = settings.modelAliases ?? {}
-      for (const key of ['ANTHROPIC_MODEL','ANTHROPIC_DEFAULT_SONNET_MODEL','ANTHROPIC_DEFAULT_HAIKU_MODEL','ANTHROPIC_DEFAULT_OPUS_MODEL','ANTHROPIC_REASONING_MODEL'] as const) {
-        if (aliases[key]) env[key] = aliases[key]!
-      }
       existing.env = env
       fs.writeFileSync(configPath, JSON.stringify(existing, null, 2), 'utf-8')
       return { success: true }

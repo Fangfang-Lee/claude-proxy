@@ -1,21 +1,10 @@
-import { useState, useEffect, useMemo } from 'react'
-import { AppSettings } from '../../types/index'
+import { useState, useEffect } from 'react'
 
 const TEXTAREA_CLS = 'w-full h-80 px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg text-sm font-mono focus:outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-100 text-gray-800 resize-none'
 
 interface Props {
   onRestart: () => Promise<void>
 }
-
-const MODEL_ALIAS_KEYS = [
-  'ANTHROPIC_MODEL',
-  'ANTHROPIC_DEFAULT_SONNET_MODEL',
-  'ANTHROPIC_DEFAULT_HAIKU_MODEL',
-  'ANTHROPIC_DEFAULT_OPUS_MODEL',
-  'ANTHROPIC_REASONING_MODEL',
-] as const
-
-type AliasKey = typeof MODEL_ALIAS_KEYS[number]
 
 const inputCls = 'w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-100 text-gray-800'
 
@@ -46,13 +35,22 @@ function configToJson(config: ClaudeConfig): string {
   return JSON.stringify(config, null, 2)
 }
 
+const MODEL_ALIAS_KEYS = [
+  'ANTHROPIC_MODEL',
+  'ANTHROPIC_DEFAULT_SONNET_MODEL',
+  'ANTHROPIC_DEFAULT_HAIKU_MODEL',
+  'ANTHROPIC_DEFAULT_OPUS_MODEL',
+  'ANTHROPIC_REASONING_MODEL',
+] as const
+
+type AliasKey = typeof MODEL_ALIAS_KEYS[number]
+
 export default function SettingsPage({ onRestart }: Props) {
-  const [settings, setSettings] = useState<AppSettings | null>(null)
   const [port, setPort] = useState('')
   const [timeout, setTimeout_] = useState('')
   const [aliases, setAliases] = useState<Record<AliasKey, string>>({} as Record<AliasKey, string>)
-  const [saving, setSaving] = useState(false)
-  const [savedMsg, setSavedMsg] = useState('')
+  const [proxySaving, setProxySaving] = useState(false)
+  const [proxySavedMsg, setProxySavedMsg] = useState('')
 
   // Claude Code 配置相关状态
   const [claudeConfig, setClaudeConfig] = useState<ClaudeConfig>({})
@@ -62,25 +60,26 @@ export default function SettingsPage({ onRestart }: Props) {
   const [viewMode, setViewMode] = useState<ViewMode>('form')
   const [jsonError, setJsonError] = useState('')
 
-  // 从 aliases 构建当前 env 对象
-  const currentEnv = useMemo(() => {
-    const env: Record<string, string> = {}
-    for (const k of MODEL_ALIAS_KEYS) {
-      if (aliases[k]) {
-        env[k] = aliases[k]
-      }
-    }
-    return env
-  }, [aliases])
-
   useEffect(() => {
+    // 加载代理配置
     window.api.settings.get().then((s) => {
-      setSettings(s)
       setPort(String(s.port))
       setTimeout_(String(s.requestTimeoutMs / 1000))
-      const a = {} as Record<AliasKey, string>
-      for (const k of MODEL_ALIAS_KEYS) a[k] = s.modelAliases?.[k] ?? ''
-      setAliases(a)
+    })
+    // 自动加载 Claude Code 配置
+    window.api.claude.readConfig().then((result) => {
+      if (result.success && result.content) {
+        const config = parseClaudeConfig(result.content)
+        setClaudeConfig(config)
+        setClaudeConfigJson(result.content)
+        // 同步到表单
+        const env = config.env ?? {}
+        const newAliases = { ...aliases } as Record<AliasKey, string>
+        for (const k of MODEL_ALIAS_KEYS) {
+          newAliases[k] = env[k] ?? ''
+        }
+        setAliases(newAliases)
+      }
     })
   }, [])
 
@@ -107,40 +106,72 @@ export default function SettingsPage({ onRestart }: Props) {
     setConfigLoading(false)
   }
 
-  // 保存 Claude Code 配置（JSON 视图）
+  // 保存 Claude Code 配置
   const saveClaudeConfig = async () => {
-    if (!claudeConfigJson.trim()) {
-      setConfigMsg('配置不能为空')
+    if (viewMode === 'json') {
+      // JSON 视图：直接保存 JSON
+      if (!claudeConfigJson.trim()) {
+        setConfigMsg('配置不能为空')
+        setTimeout(() => setConfigMsg(''), 2000)
+        return
+      }
+      // 验证 JSON 格式
+      try {
+        JSON.parse(claudeConfigJson)
+      } catch {
+        setConfigMsg('JSON 格式错误')
+        setTimeout(() => setConfigMsg(''), 2000)
+        return
+      }
+      setConfigLoading(true)
+      const result = await window.api.claude.saveConfig(claudeConfigJson)
+      if (result.success) {
+        setConfigMsg('已保存')
+      } else {
+        setConfigMsg(result.error ?? '保存失败')
+      }
       setTimeout(() => setConfigMsg(''), 2000)
-      return
-    }
-    // 验证 JSON 格式
-    try {
-      JSON.parse(claudeConfigJson)
-    } catch {
-      setConfigMsg('JSON 格式错误')
-      setTimeout(() => setConfigMsg(''), 2000)
-      return
-    }
-    setConfigLoading(true)
-    const result = await window.api.claude.saveConfig(claudeConfigJson)
-    if (result.success) {
-      setConfigMsg('已保存')
+      setConfigLoading(false)
     } else {
-      setConfigMsg(result.error ?? '保存失败')
+      // 表单视图：构建完整配置并保存
+      const env: Record<string, string> = {}
+      for (const k of MODEL_ALIAS_KEYS) {
+        if (aliases[k]?.trim()) {
+          env[k] = aliases[k].trim()
+        }
+      }
+      const config = {
+        ...claudeConfig,
+        env: {
+          ...(claudeConfig.env ?? {}),
+          ...env,
+        },
+      }
+      setConfigLoading(true)
+      const result = await window.api.claude.saveConfig(JSON.stringify(config, null, 2))
+      if (result.success) {
+        setConfigMsg('已保存')
+      } else {
+        setConfigMsg(result.error ?? '保存失败')
+      }
+      setTimeout(() => setConfigMsg(''), 2000)
+      setConfigLoading(false)
     }
-    setTimeout(() => setConfigMsg(''), 2000)
-    setConfigLoading(false)
   }
 
   // 切换到 JSON 视图时，将表单数据合并到完整配置中
   const switchToJson = () => {
-    // 创建新的配置对象，合并表单中的 env
+    const env: Record<string, string> = {}
+    for (const k of MODEL_ALIAS_KEYS) {
+      if (aliases[k]?.trim()) {
+        env[k] = aliases[k].trim()
+      }
+    }
     const newConfig = {
       ...claudeConfig,
       env: {
         ...(claudeConfig.env ?? {}),
-        ...currentEnv,
+        ...env,
       },
     }
     setClaudeConfig(newConfig)
@@ -186,33 +217,18 @@ export default function SettingsPage({ onRestart }: Props) {
     }
   }
 
-  const handleSave = async () => {
-    setSaving(true)
-    const modelAliases: AppSettings['modelAliases'] = {}
-    for (const k of MODEL_ALIAS_KEYS) {
-      if (aliases[k].trim()) modelAliases[k] = aliases[k].trim()
-    }
-    const updated = await window.api.settings.update({
+  // 保存代理配置并重启
+  const handleProxySave = async () => {
+    setProxySaving(true)
+    await window.api.settings.update({
       port: Number(port),
       requestTimeoutMs: Number(timeout) * 1000,
-      modelAliases,
     })
-    setSettings(updated)
-    setSaving(false)
-    setSavedMsg('已保存')
-    setTimeout(() => setSavedMsg(''), 2000)
-  }
-
-  const handleRestart = async () => {
-    setRestarting(true)
-    await handleSave()
     await onRestart()
-    setRestarting(false)
-    setSavedMsg('已保存并重启')
-    setTimeout(() => setSavedMsg(''), 2000)
+    setProxySaving(false)
+    setProxySavedMsg('已保存并重启')
+    setTimeout(() => setProxySavedMsg(''), 2000)
   }
-
-  if (!settings) return null
 
   return (
     <div className="p-8 max-w-6xl mx-auto">
@@ -231,7 +247,6 @@ export default function SettingsPage({ onRestart }: Props) {
                 onChange={(e) => setPort(e.target.value)}
                 className={inputCls}
               />
-              <p className="text-xs text-gray-400 mt-2">修改后需点击"保存并重启代理"生效</p>
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-600 mb-2">请求超时（秒）</label>
@@ -243,9 +258,23 @@ export default function SettingsPage({ onRestart }: Props) {
               />
             </div>
           </div>
+          <div className="flex items-center gap-3 mt-5">
+            <button
+              onClick={handleProxySave}
+              disabled={proxySaving}
+              className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
+            >
+              {proxySaving ? '保存中…' : '保存配置并重启'}
+            </button>
+            {proxySavedMsg && (
+              <span className={`text-sm ${proxySavedMsg.includes('失败') || proxySavedMsg.includes('错误') ? 'text-red-500' : 'text-green-600'}`}>
+                {proxySavedMsg}
+              </span>
+            )}
+          </div>
         </section>
 
-        {/* 模型配置 - 包含表单视图和 JSON 视图 */}
+        {/* Claude Code 模型配置 - 包含表单视图和 JSON 视图 */}
         <section className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
           {/* 视图切换开关 */}
           <div className="flex items-center justify-between mb-5">
@@ -287,6 +316,20 @@ export default function SettingsPage({ onRestart }: Props) {
           {viewMode === 'form' && (
             <>
               <p className="text-xs text-gray-400 mb-5">填写后点击"保存配置"生效，留空则不写入该项</p>
+              <div className="flex items-center gap-3 mb-4">
+                <button
+                  onClick={saveClaudeConfig}
+                  disabled={configLoading}
+                  className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
+                >
+                  {configLoading ? '保存中…' : '保存配置'}
+                </button>
+                {configMsg && (
+                  <span className={`text-sm ${configMsg.includes('失败') || configMsg.includes('错误') ? 'text-red-500' : 'text-green-600'}`}>
+                    {configMsg}
+                  </span>
+                )}
+              </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {MODEL_ALIAS_KEYS.map((k) => (
                   <div key={k}>
@@ -310,13 +353,6 @@ export default function SettingsPage({ onRestart }: Props) {
                 <p className="text-sm text-red-500 mb-3">{jsonError}</p>
               )}
               <div className="flex items-center gap-3 mb-3">
-                <button
-                  onClick={loadClaudeConfig}
-                  disabled={configLoading}
-                  className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
-                >
-                  {configLoading && !claudeConfigJson ? '加载中…' : '加载配置'}
-                </button>
                 <button
                   onClick={saveClaudeConfig}
                   disabled={configLoading || !claudeConfigJson}
@@ -342,54 +378,6 @@ export default function SettingsPage({ onRestart }: Props) {
             </>
           )}
         </section>
-
-        {/* 保存按钮 */}
-        <div className="flex items-center gap-4 pt-2">
-          <button
-            onClick={async () => {
-              setSaving(true)
-              // 1. 保存代理配置
-              const modelAliases: AppSettings['modelAliases'] = {}
-              for (const k of MODEL_ALIAS_KEYS) {
-                if (aliases[k].trim()) modelAliases[k] = aliases[k].trim()
-              }
-              const updated = await window.api.settings.update({
-                port: Number(port),
-                requestTimeoutMs: Number(timeout) * 1000,
-                modelAliases,
-              })
-              setSettings(updated)
-
-              // 2. 写入 Claude Code 配置
-              if (viewMode === 'json' && claudeConfigJson.trim()) {
-                // JSON 视图：直接保存 JSON
-                await window.api.claude.saveConfig(claudeConfigJson)
-              } else {
-                // 表单视图：构建完整配置并保存
-                const config = {
-                  ...claudeConfig,
-                  env: {
-                    ...(claudeConfig.env ?? {}),
-                    ...currentEnv,
-                  },
-                }
-                await window.api.claude.saveConfig(JSON.stringify(config, null, 2))
-              }
-
-              // 3. 重启代理
-              await onRestart()
-
-              setSaving(false)
-              setSavedMsg('已保存并写入配置')
-              setTimeout(() => setSavedMsg(''), 2000)
-            }}
-            disabled={saving}
-            className="px-6 py-2.5 bg-blue-500 hover:bg-blue-600 text-white rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
-          >
-            {saving ? '保存中…' : '保存并写入配置'}
-          </button>
-          {savedMsg && <span className="text-sm text-green-600">{savedMsg}</span>}
-        </div>
       </div>
     </div>
   )

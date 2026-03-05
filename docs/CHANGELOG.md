@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.0.3] - 2026-03-05
+
+### Changed
+- 删除 modelAliases 配置，从工具生成配置中移除
+- 拆分保存按钮：代理配置和 Claude Code 模型配置各有独立的保存按钮
+
+---
+
 ## [1.0.2] - 2026-03-05
 
 ### Added

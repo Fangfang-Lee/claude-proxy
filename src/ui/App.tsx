@@ -55,23 +55,31 @@ export default function App() {
   const copyConfig = async () => {
     const port = proxyStatus?.port ?? 3001
     const settings = await window.api.settings.get()
-    const aliases = settings.modelAliases ?? {}
 
     const env: Record<string, string> = {
       ANTHROPIC_BASE_URL: `http://localhost:${port}`,
       ANTHROPIC_AUTH_TOKEN: 'claude-proxy',
     }
 
-    // 添加模型别名
-    const aliasKeys = [
-      'ANTHROPIC_MODEL',
-      'ANTHROPIC_DEFAULT_SONNET_MODEL',
-      'ANTHROPIC_DEFAULT_HAIKU_MODEL',
-      'ANTHROPIC_DEFAULT_OPUS_MODEL',
-      'ANTHROPIC_REASONING_MODEL',
-    ] as const
-    for (const key of aliasKeys) {
-      if (aliases[key]) env[key] = aliases[key]!
+    // 从 Claude Code 配置读取模型别名
+    const claudeResult = await window.api.claude.readConfig()
+    if (claudeResult.success && claudeResult.content) {
+      try {
+        const config = JSON.parse(claudeResult.content)
+        const claudeEnv = config.env ?? {}
+        const aliasKeys = [
+          'ANTHROPIC_MODEL',
+          'ANTHROPIC_DEFAULT_SONNET_MODEL',
+          'ANTHROPIC_DEFAULT_HAIKU_MODEL',
+          'ANTHROPIC_DEFAULT_OPUS_MODEL',
+          'ANTHROPIC_REASONING_MODEL',
+        ] as const
+        for (const key of aliasKeys) {
+          if (claudeEnv[key]) env[key] = claudeEnv[key]
+        }
+      } catch {
+        // 忽略解析错误
+      }
     }
 
     const config = JSON.stringify({ env }, null, 2)
